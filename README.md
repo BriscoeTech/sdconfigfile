@@ -1,9 +1,23 @@
-# SDConfigFile
+# SDConfigFile2
 
 ## Introduction
 
-SDConfigFile is an Arduino library to read Sketch settings from a configuration file on an SD card.
+SDConfigFile2 is an Arduino library to read saved settings from a configuration file on an SD card.
 
+This library is based of off bneedhamia original SDConfigFile library. This library expands upon the origional, but adds the ability to both read and write settings to the sd card!
+
+
+*************************************************************************************************************
+
+##### BriscoeTech comments:
+
+I love the SAMD21, but have realized that not having eeprom has made afew of my projects more difficult. I have been making puzzle boxes and laser tag guns, and they need to save information away for the next time they are turned back on.  
+
+With the new additions, the config file acts as a non volatile buffer, ready to be read and rewritten.
+
+
+
+##### bneedhamia comments:
 I wrote the library so that I didn't have to hard-code private WiFi settings in my Sketches.  Instead, I have a config.cfg file on an SD card, that contains things like:
 
     ssid=wickedOz
@@ -11,24 +25,12 @@ I wrote the library so that I didn't have to hard-code private WiFi settings in 
 
 Now I can change the WiFi settings, or any other configuration, by simply editing the SD card's **config.cfg** file.
 
-## Installation
 
-To install SDConfigFile on Windows:
-
-1. Run git bash (or whatever git client you like)
-1. cd Documents/Arduino/libraries
-1. git clone https://github.com/bneedhamia/sdconfigfile.git SDConfigFile
-1. restart your Arduino IDE
-
-To install SDConfigFile on Linux:
-
-1. cd sketchbook/libraries
-1. git clone https://github.com/bneedhamia/sdconfigfile.git SDConfigFile
-1. restart your Arduino IDE
+*************************************************************************************************************
 
 ## To use
 
-See **examples/SDConfigFileExample** for a simple example Sketch and its .cfg file.  See readConfiguration() in that sketch for the code that reads the settings from the .cfg file.
+See **examples/SDConfigFileExample2** for a full example Sketch and its .cfg file.  See readConfiguration() in that sketch for the code that reads the settings from the .cfg file.
 
 The basic flow of reading a configuration file is:
 
@@ -39,11 +41,17 @@ The basic flow of reading a configuration file is:
     
     SD.begin(...);
     cfg.begin(...);
-    while (cfg.readNextSetting()) {
-      if (cfg.nameIs("mySetting1")) {
-        call cfg.copyValue(),
-             cfg.getBooleanValue(), or
-             cfg.getIntValue(), as appropriate;
+    while (cfg.readNextSetting()) 
+	{
+      if (cfg.nameIs("mySetting1")) 
+	  {
+			   call cfg.copyValue(),
+            cfg.getBooleanValue(), or
+            cfg.getIntValue(), as appropriate to read the settings;
+			
+			   call setStringValue(), 
+			      setBooleanValue(), or 
+			      setIntValue, as appropriate to updated that setting;
       }
       ...do the same for the other setting names.
     }
