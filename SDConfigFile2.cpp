@@ -238,7 +238,7 @@ boolean SDConfigFile::readNextSetting()
 //******************************************************************************
 
 
-// will remove all occurances of a specific character from a string
+// will remove all occurrences of a specific character from a string
 void SDConfigFile::remove_chars(char* str, char c) 
 {
     char *pr = str, *pw = str;
@@ -307,7 +307,6 @@ const char *SDConfigFile::getRawValue()
 
 }
 
-
 const char *SDConfigFile::getCleanValue() 
 {
 
@@ -358,11 +357,7 @@ const char *SDConfigFile::getCleanString()
 
 }
 
-
-//******************************************************************************
-
-
-void SDConfigFile::setValue(const char *newValue) 
+void SDConfigFile::setNewValue(const char *newValue) 
 {
   
   #ifdef SDCONFIGFILE_DEBUG
@@ -424,44 +419,231 @@ void SDConfigFile::setValue(const char *newValue)
   
 }
 
+//******************************************************************************
+
+void SDConfigFile::setValue(const char *newValue)
+{
+	setStringValue(newValue);
+}
+
+
+void SDConfigFile::setValue(bool newValue)
+{
+	setBooleanValue(newValue);
+}
+
+
+void SDConfigFile::setValue(int newValue)
+{
+	setIntValue(newValue);
+}
+
+
+void SDConfigFile::setValue(double newValue)
+{
+	setDoubleValue(newValue);
+}
+
+
+//******************************************************************************
 
 void SDConfigFile::setStringValue(const char *newValue) 
 {
+	SERIAL.println("SDConfigFile Set String");
+
 	char buffer[_lineSize];
     sprintf (buffer, "\"%s\"", newValue);
-	setValue(buffer);
+    setNewValue(buffer);
 }
 
 
 void SDConfigFile::setBooleanValue(bool newValue) 
 {
+	SERIAL.println("SDConfigFile Set Bool");
+
 	if(newValue == true)
 	{
-		setValue("true");
+		setNewValue("true");
 	}
 	else
 	{
-		setValue("false");
+		setNewValue("false");
 	}
 }
 
 
 void SDConfigFile::setIntValue(int newValue) 
 {
+	SERIAL.println("SDConfigFile Set Int");
+
 	char stringValue[5];
 	itoa(newValue, stringValue, 10);
-	
-	#ifdef SDCONFIGFILE_DEBUG
-	  SERIAL.print("New Int: ");
-	  SERIAL.println(stringValue);
-    #endif
-	
-	setValue( stringValue );
+	setNewValue( stringValue );
 }
+
+
+////https://stackoverflow.com/questions/23191203/convert-float-to-string-without-sprintf
+//void floatToStr(char *out, float x, int decimalPoint)
+//{
+//    uint16_t absval = fabs(x);
+//    uint16_t absvalcopy = absval;
+//
+//
+//    int decimalcount = 0;
+//
+//    while(absvalcopy != 0)
+//    {
+//        absvalcopy /= 10;
+//        decimalcount ++;
+//    }
+//
+//    uint8_t *absbuffer = new uint8_t[sizeof(uint8_t) * (decimalcount + decimalPoint + 1)];
+//    int absbufferindex = 0;
+//    absvalcopy = absval;
+//    uint8_t temp;
+//
+//    int i = 0;
+//    for(i = decimalcount; i > 0; i--)
+//    {
+//        uint16_t frst1 = fabs((absvalcopy / pow(10.0, i-1)));
+//        temp = (frst1 % 10) + 0x30;
+//        *(absbuffer + absbufferindex) = temp;
+//        absbufferindex++;
+//    }
+//
+//    if(decimalPoint > 0)
+//    {
+//        *(absbuffer + absbufferindex) = '.';
+//        absbufferindex ++;
+//
+//        //------------------- Decimal Extractor ---------------------//
+//       for(i = 1; i < decimalPoint + 1; i++)
+//       {
+//
+//           uint32_t valueFloat = (x - (float)absval)*pow(10,i);
+//           *(absbuffer + absbufferindex) = ((valueFloat) % 10) + 0x30;
+//           absbufferindex++;
+//       }
+//    }
+//
+//   for(i=0; i< (decimalcount + decimalPoint + 1); i++)
+//   {
+//       *(out + i) = *(absbuffer + i);
+//   }
+//
+//   i=0;
+//   if(decimalPoint > 0)
+//       i = 1;
+//   *(out + decimalcount + decimalPoint + i) = 0;
+//
+//}
+//
+
+//http://www.onarm.com/forum/17514/
+void ftoa(char *str, int arraySize, float num, int precision)
+{
+  int intpart = num;
+  int intdecimal;
+  int i;
+  float decimal_part;
+  char decimal[arraySize];
+
+  memset(str, 0x0, arraySize);
+  itoa(num, str, 10);
+
+  strcat(str, ".");
+
+  decimal_part = num - intpart;
+  intdecimal = decimal_part * pow(10, precision);
+
+  if(intdecimal < 0)
+  {
+    intdecimal = -intdecimal;
+  }
+  itoa(intdecimal, decimal, 10);
+  for(i=0; i < (precision - strlen(decimal)); i++)
+  {
+    strcat(str, "0");
+  }
+  strcat(str, decimal);
+}
+
+void SDConfigFile::setDoubleValue(double newValue)
+{
+	SERIAL.print("SDConfigFile Set Double: ");
+
+	char stringValue[20];
+	ftoa(stringValue, 20, newValue, 6);
+
+	SERIAL.println(stringValue);
+	setNewValue( stringValue );
+}
+
+
 
 
 //******************************************************************************
 
+void SDConfigFile::getValue(char* updateValue)
+{
+  const char *temp = getCleanString();
+  
+  strcpy(updateValue, temp);
+}
+
+void SDConfigFile::getValue(char** updateValue)
+{
+  const char *temp = getCleanString();
+
+  strcpy(*updateValue, temp);
+}
+
+// Returns the value part of the most-recently-read setting as a boolean
+// The value "true" corresponds to true
+// all other values correspond to false
+void SDConfigFile::getValue(boolean* updateValue)
+{
+  if( strcmp("true", getCleanValue()) == 0) 
+  {
+	  *updateValue = true;
+  }
+  else
+  {
+	  *updateValue = false;
+  }
+}
+
+
+// Returns the value part of the most-recently-read setting as an integer, or 0 if an error occurred
+void SDConfigFile::getValue(int* updateValue)
+{
+  const char *str = getCleanValue();
+  if (!str) 
+  {
+	  *updateValue = 0;
+  }
+  else
+  {
+	  *updateValue = atoi(str);
+  }
+}
+
+// Returns the value part of the most-recently-read setting as an integer, or 0 if an error occurred
+void SDConfigFile::getValue(double* updateValue)
+{
+  const char *str = getCleanValue();
+  if (!str)
+  {
+	  *updateValue = 0;
+  }
+  else
+  {
+	  *updateValue = atof(str);
+  }
+}
+
+
+//******************************************************************************
 
 // Returns a persistent, dynamically-allocated copy of the value part
 // of the most-recently-read setting, or null if a failure occurred.
@@ -474,14 +656,14 @@ char *SDConfigFile::getStringValue()
   char *result = 0;
   int length;
 
-  //if (_lineLength <= 0 || _valueIdx <= 1) 
-  //{
-  //  return 0; // begin() wasn't called, or failed.
-  //}
+  if (_lineLength <= 0 || _valueIdx <= 1)
+  {
+    return 0; // begin() wasn't called, or failed.
+  }
 
   length = strlen(temp);
   result = (char *) malloc(length + 1);
-  if (result == 0) 
+  if (result == 0)
   {
     return 0; // out of memory
   }
@@ -514,4 +696,15 @@ int SDConfigFile::getIntValue()
     return 0;
   }
   return atoi(str);
+}
+
+
+double SDConfigFile::getDoubleValue()
+{
+  const char *str = getCleanValue();
+  if (!str)
+  {
+    return 0;
+  }
+  return atof(str);
 }

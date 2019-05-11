@@ -16,7 +16,7 @@
 #include <Arduino.h>
 #include <SD.h>
 
-#define BUFFER_MARKER		'-'	// will mark in the config file where bytes are reserved for the value field
+#define BUFFER_MARKER		'*'	// will mark in the config file where bytes are reserved for the value field
 
 class SDConfigFile 
 {
@@ -34,7 +34,7 @@ class SDConfigFile
                            // (the name part is at &_line[0])
 	
 	void remove_chars(char* str, char c); // will clean up strings, remove unwanted characters
-	void setValue(const char *newValue);
+	void setNewValue(const char *newValue);
   
   public:
     boolean begin(const char *configFileName, uint8_t maxLineLength);
@@ -48,13 +48,27 @@ class SDConfigFile
 	const char *getCleanValue();
 	const char *getCleanString();
     
+	//**********************************
+	void setValue(const char *newValue);
+	void setValue(bool newValue);
+	void setValue(int newValue);
+	void setValue(double newValue);
+
 	void setStringValue(const char *newValue);
 	void setBooleanValue(bool newValue);
 	void setIntValue(int newValue);
+	void setDoubleValue(double newValue);
 	
+	//**********************************
+	void getValue(char*  updateValue);
+	void getValue(char** updateValue);
+    void getValue(boolean* updateValue);
+	void getValue(int* updateValue);
+	void getValue(double* updateValue);
+
 	char *getStringValue();
     boolean getBooleanValue();
 	int getIntValue();
-    
+	double getDoubleValue();
 };
 #endif
