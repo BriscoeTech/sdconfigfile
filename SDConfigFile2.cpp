@@ -10,6 +10,7 @@
 #include <SDConfigFile2.h>
 
 //#define SDCONFIGFILE_DEBUG
+#define SDCONFIGFILE_DEBUG_BASIC
 #define SERIAL SerialUSB
 
 /*
@@ -34,7 +35,7 @@ boolean SDConfigFile::begin(const char *configFileName, uint8_t maxLineLength)
   _line = (char *) malloc(_lineSize);
   if (_line == 0) 
   {
-	#ifdef SDCONFIGFILE_DEBUG
+	#ifdef SDCONFIGFILE_DEBUG_BASIC
 		SERIAL.println("out of memory");
 	#endif
     _atEnd = true;
@@ -49,7 +50,7 @@ boolean SDConfigFile::begin(const char *configFileName, uint8_t maxLineLength)
   _file = SD.open(configFileName, FILE_WRITE);
   if (!_file) 
   {
-	#ifdef SDCONFIGFILE_DEBUG
+	#ifdef SDCONFIGFILE_DEBUG_BASIC
 		SERIAL.print("Could not open SD file: ");
 		SERIAL.println(configFileName);
 	#endif
@@ -57,6 +58,10 @@ boolean SDConfigFile::begin(const char *configFileName, uint8_t maxLineLength)
     return false;
   }
   
+  #ifdef SDCONFIGFILE_DEBUG_BASIC
+  	  SERIAL.println("file opened");
+  #endif
+
   // seek back to the beginning of the file
   // write mode starts at end of file
   _file.seek(0);
@@ -372,6 +377,8 @@ void SDConfigFile::setNewValue(const char *newValue)
     SERIAL.println(strlen(newValue));
   #endif
 
+  int startingPosition = _file.position();
+
   // go back to the equals character
   int read;
   do
@@ -380,7 +387,9 @@ void SDConfigFile::setNewValue(const char *newValue)
 	read = _file.read();
 	
 	#ifdef SDCONFIGFILE_DEBUG
-	  SERIAL.print("Seek,");
+	  SERIAL.print("Current: ");
+	  SERIAL.print(_file.position());
+	  SERIAL.println(" Seek");
     #endif
   }
   while(read != '=');
@@ -397,17 +406,19 @@ void SDConfigFile::setNewValue(const char *newValue)
 	SERIAL.println(written);
   #endif
   
-  //fill rest of line to new line character with spaces
+  //fill rest of line to new line character with characters
   read = _file.read();
-  
-  while(read != '\n' && read != '\r')
+
+  while(read != '\n' && read != '\r' && _file.position() < startingPosition)
   {
     _file.seek( _file.position() - 1 );
     _file.write(BUFFER_MARKER);
 	read = _file.read();
-	
+
 	#ifdef SDCONFIGFILE_DEBUG
-		SERIAL.print("Fill,");
+		SERIAL.print("Current: ");
+		SERIAL.print(_file.position());
+		SERIAL.println(" Fill");
     #endif
   }
   
@@ -449,8 +460,9 @@ void SDConfigFile::setValue(double newValue)
 
 void SDConfigFile::setStringValue(const char *newValue) 
 {
-	SERIAL.println("SDConfigFile Set String");
-
+	#ifdef SDCONFIGFILE_DEBUG
+		SERIAL.println("SDConfigFile Set String");
+	#endif
 	char buffer[_lineSize];
     sprintf (buffer, "\"%s\"", newValue);
     setNewValue(buffer);
@@ -459,8 +471,9 @@ void SDConfigFile::setStringValue(const char *newValue)
 
 void SDConfigFile::setBooleanValue(bool newValue) 
 {
-	SERIAL.println("SDConfigFile Set Bool");
-
+	#ifdef SDCONFIGFILE_DEBUG
+		SERIAL.println("SDConfigFile Set Bool");
+	#endif
 	if(newValue == true)
 	{
 		setNewValue("true");
@@ -474,8 +487,9 @@ void SDConfigFile::setBooleanValue(bool newValue)
 
 void SDConfigFile::setIntValue(int newValue) 
 {
-	SERIAL.println("SDConfigFile Set Int");
-
+	#ifdef SDCONFIGFILE_DEBUG
+		SERIAL.println("SDConfigFile Set Int");
+	#endif
 	char stringValue[5];
 	itoa(newValue, stringValue, 10);
 	setNewValue( stringValue );
@@ -570,12 +584,13 @@ void ftoa(char *str, int arraySize, float num, int precision)
 
 void SDConfigFile::setDoubleValue(double newValue)
 {
-	SERIAL.print("SDConfigFile Set Double: ");
-
 	char stringValue[20];
 	ftoa(stringValue, 20, newValue, 6);
 
-	SERIAL.println(stringValue);
+	#ifdef SDCONFIGFILE_DEBUG
+		SERIAL.print("SDConfigFile Set Double: ");
+	#endif
+
 	setNewValue( stringValue );
 }
 
@@ -646,10 +661,14 @@ void SDConfigFile::getValue(double* updateValue)
 //******************************************************************************
 
 // Returns a persistent, dynamically-allocated copy of the value part
-// of the most-recently-read setting, or null if a failure occurred.
+// of the most-recently-read setting, or a error string if a failure occurred.
 // 
 // Unlike getValue(), the return value of this function
 // persists after readNextSetting() is called or end() is called.
+//
+// this function is not reccomendeed! dynamic allocation in a
+// embedded system will come back and byte you in the butt!
+//
 char *SDConfigFile::getStringValue() 
 {
   const char *temp = getCleanString();
@@ -658,14 +677,14 @@ char *SDConfigFile::getStringValue()
 
   if (_lineLength <= 0 || _valueIdx <= 1)
   {
-    return 0; // begin() wasn't called, or failed.
+    return "Not init"; // begin() wasn't called, or failed.
   }
 
   length = strlen(temp);
   result = (char *) malloc(length + 1);
   if (result == 0)
   {
-    return 0; // out of memory
+    return "Out Of Memmory"; // out of memory
   }
   
   strcpy(result, temp);
