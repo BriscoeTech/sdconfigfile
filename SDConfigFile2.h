@@ -14,7 +14,9 @@
  */
 
 #include <Arduino.h>
-#include <SD.h>
+
+#include <SPI.h>
+#include <SdFat.h>
 
 #define BUFFER_MARKER		'*'	// will mark in the config file where bytes are reserved for the value field
 
@@ -37,7 +39,7 @@ class SDConfigFile
 	void setNewValue(const char *newValue);
   
   public:
-    boolean begin(const char *configFileName, uint8_t maxLineLength);
+    boolean begin(const char *configFileName, uint8_t maxLineLength, SdFat *SD);
     void end();
     boolean readNextSetting();
 	

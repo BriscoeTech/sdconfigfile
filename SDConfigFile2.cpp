@@ -21,7 +21,7 @@
  *
  * NOTE: SD.begin() must be called before calling our begin().
  */
-boolean SDConfigFile::begin(const char *configFileName, uint8_t maxLineLength) 
+boolean SDConfigFile::begin(const char *configFileName, uint8_t maxLineLength, SdFat *SD)
 {
   _lineLength = 0;
   _lineSize = 0;
@@ -46,8 +46,8 @@ boolean SDConfigFile::begin(const char *configFileName, uint8_t maxLineLength)
    * To avoid stale references to configFileName
    * we don't save it. To minimize memory use, we don't copy it.
    */
-   
-  _file = SD.open(configFileName, FILE_WRITE);
+
+  _file = SD->open(configFileName, FILE_WRITE);
   if (!_file) 
   {
 	#ifdef SDCONFIGFILE_DEBUG_BASIC
